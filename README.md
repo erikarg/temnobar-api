@@ -279,34 +279,6 @@ O pipeline no **GitHub Actions** roda automaticamente em pushes e PRs para `main
 
 ---
 
-## Docker
-
-O Dockerfile utiliza **multi-stage build** para uma imagem final enxuta:
-
-```bash
-# Build e execução
-docker compose up -d
-
-# Ver logs
-docker compose logs -f api
-
-# Parar
-docker compose down
-```
-
-O `docker-compose.yml` inclui:
-
-- **PostgreSQL 16** com health check e volume persistente
-- **API** com restart automático, migrations na inicialização e volume para uploads
-
----
-
-## Documentação Interativa
-
-Com o servidor rodando, acesse **http://localhost:3000/docs** para explorar a API pelo Swagger UI. Todos os endpoints estão documentados com schemas de request/response, códigos de status e requisitos de autenticação.
-
----
-
 ## Scripts
 
 | Comando | Descrição |
