@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  DATABASE_URL: postgresql://postgres:postgres@postgres:5432/temnobar_test?schema=public
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/temnobar_test?schema=public
   JWT_SECRET: ci-test-secret-at-least-32-characters-long
   PORT: "3000"
   NODE_ENV: test
@@ -48,7 +48,7 @@ jobs:
       - name: Wait for Postgres
         run: |
           for i in {1..20}; do
-            pg_isready -h postgres -U postgres && exit 0
+            pg_isready -h localhost -U postgres && exit 0
             echo "waiting postgres..."
             sleep 2
           done
