@@ -1,6 +1,7 @@
 import swaggerJsdoc from "swagger-jsdoc";
 
 const serverUrl = process.env.API_URL;
+const isProd = process.env.NODE_ENV === "production";
 
 export const swaggerSpec = swaggerJsdoc({
   definition: {
@@ -53,5 +54,5 @@ export const swaggerSpec = swaggerJsdoc({
       },
     },
   },
-  apis: ["modules/**/*.ts"],
+  apis: [isProd ? "dist/modules/**/*.js" : "modules/**/*.ts"],
 });
