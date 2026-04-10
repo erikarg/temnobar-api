@@ -7,10 +7,11 @@ on:
     branches: [main]
 
 env:
-  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/temnobar_test?schema=public
+  DATABASE_URL: postgresql://postgres:postgres@postgres:5432/temnobar_test?schema=public
   JWT_SECRET: ci-test-secret-at-least-32-characters-long
   PORT: "3000"
   NODE_ENV: test
+  API_URL: http://localhost:3000
 
 jobs:
   check:
