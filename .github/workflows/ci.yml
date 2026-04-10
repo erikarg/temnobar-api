@@ -45,6 +45,15 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
+      - name: Wait for Postgres
+        run: |
+          for i in {1..20}; do
+            pg_isready -h postgres -U postgres && exit 0
+            echo "waiting postgres..."
+            sleep 2
+          done
+          exit 1
+
       - name: Lint
         run: npm run lint
 
