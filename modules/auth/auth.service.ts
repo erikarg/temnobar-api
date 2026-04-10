@@ -1,0 +1,62 @@
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { prisma } from "../../database/prisma.js";
+import { env } from "../../lib/env.js";
+import { ConflictError, UnauthorizedError } from "../../lib/errors.js";
+
+const SALT_ROUNDS = 10;
+const TOKEN_EXPIRY = "7d";
+
+export async function register(data: {
+  email: string;
+  password: string;
+  name: string;
+}) {
+  const existing = await prisma.user.findUnique({
+    where: { email: data.email },
+  });
+  if (existing) {
+    throw new ConflictError("Email already registered");
+  }
+
+  const password_hash = await bcrypt.hash(data.password, SALT_ROUNDS);
+  const user = await prisma.user.create({
+    data: {
+      email: data.email,
+      password_hash,
+      name: data.name,
+    },
+  });
+
+  const token = signToken(user.id, user.bar_id);
+  return { user: { id: user.id, email: user.email, name: user.name }, token };
+}
+
+export async function login(email: string, password: string) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    throw new UnauthorizedError("Invalid credentials");
+  }
+
+  const valid = await bcrypt.compare(password, user.password_hash);
+  if (!valid) {
+    throw new UnauthorizedError("Invalid credentials");
+  }
+
+  const token = signToken(user.id, user.bar_id);
+  return { user: { id: user.id, email: user.email, name: user.name }, token };
+}
+
+export async function getMe(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, name: true, bar_id: true, created_at: true },
+  });
+  return user;
+}
+
+function signToken(userId: string, barId: string | null) {
+  return jwt.sign({ sub: userId, bar_id: barId }, env.JWT_SECRET, {
+    expiresIn: TOKEN_EXPIRY,
+  });
+}

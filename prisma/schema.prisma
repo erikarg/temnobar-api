@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Bar {
+  id         String    @id @default(cuid())
+  nome       String
+  slug       String    @unique
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  products   Product[]
+
+  @@map("bars")
+}
+
+model Product {
+  id                String        @id @default(cuid())
+  codigo_produto    String
+  descricao_produto String
+  status            ProductStatus @default(ACTIVE)
+  foto_produto      String?
+  thumb_produto     String?
+  bar_id            String
+  bar               Bar           @relation(fields: [bar_id], references: [id])
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+
+  @@unique([bar_id, codigo_produto])
+  @@index([bar_id, status])
+  @@map("products")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password_hash String
+  name          String
+  bar_id        String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@map("users")
+}
