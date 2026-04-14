@@ -4,14 +4,14 @@ import { app } from "../app.js";
 import { registerAndLogin } from "./helpers.js";
 
 describe("POST /api/v1/auth/register", () => {
-  it("creates a user and returns a token", async () => {
+  it("creates a user and sets a token cookie", async () => {
     const res = await request(app)
       .post("/api/v1/auth/register")
       .send({ email: "new@example.com", password: "password123", name: "New User" });
 
     expect(res.status).toBe(201);
-    expect(res.body.data.user.email).toBe("new@example.com");
-    expect(res.body.data.token).toBeDefined();
+    expect(res.body.user.email).toBe("new@example.com");
+    expect(res.headers["set-cookie"]).toBeDefined();
   });
 
   it("rejects duplicate email", async () => {
@@ -35,7 +35,7 @@ describe("POST /api/v1/auth/register", () => {
 });
 
 describe("POST /api/v1/auth/login", () => {
-  it("returns a token for valid credentials", async () => {
+  it("returns a token cookie for valid credentials", async () => {
     await registerAndLogin("login@example.com", "mypassword");
 
     const res = await request(app)
@@ -43,7 +43,7 @@ describe("POST /api/v1/auth/login", () => {
       .send({ email: "login@example.com", password: "mypassword" });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.token).toBeDefined();
+    expect(res.headers["set-cookie"]).toBeDefined();
   });
 
   it("rejects wrong password", async () => {
@@ -67,11 +67,11 @@ describe("POST /api/v1/auth/login", () => {
 
 describe("GET /api/v1/auth/me", () => {
   it("returns the current user", async () => {
-    const { token } = await registerAndLogin();
+    const { cookie } = await registerAndLogin();
 
     const res = await request(app)
       .get("/api/v1/auth/me")
-      .set("Authorization", `Bearer ${token}`);
+      .set("Cookie", cookie);
 
     expect(res.status).toBe(200);
     expect(res.body.data.email).toBe("test@example.com");

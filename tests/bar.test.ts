@@ -5,11 +5,11 @@ import { registerAndLogin, createBar } from "./helpers.js";
 
 describe("POST /api/v1/bars", () => {
   it("creates a bar", async () => {
-    const { token } = await registerAndLogin();
+    const { cookie } = await registerAndLogin();
 
     const res = await request(app)
       .post("/api/v1/bars")
-      .set("Authorization", `Bearer ${token}`)
+      .set("Cookie", cookie)
       .send({ nome: "Meu Bar", slug: "meu-bar" });
 
     expect(res.status).toBe(201);
@@ -19,23 +19,23 @@ describe("POST /api/v1/bars", () => {
   });
 
   it("rejects duplicate slug", async () => {
-    const { token } = await registerAndLogin();
-    await createBar(token, "Bar 1", "same-slug");
+    const { cookie } = await registerAndLogin();
+    await createBar(cookie, "Bar 1", "same-slug");
 
     const res = await request(app)
       .post("/api/v1/bars")
-      .set("Authorization", `Bearer ${token}`)
+      .set("Cookie", cookie)
       .send({ nome: "Bar 2", slug: "same-slug" });
 
     expect(res.status).toBe(409);
   });
 
   it("rejects invalid slug format", async () => {
-    const { token } = await registerAndLogin();
+    const { cookie } = await registerAndLogin();
 
     const res = await request(app)
       .post("/api/v1/bars")
-      .set("Authorization", `Bearer ${token}`)
+      .set("Cookie", cookie)
       .send({ nome: "Bad Slug", slug: "Bad Slug!" });
 
     expect(res.status).toBe(400);
@@ -52,9 +52,9 @@ describe("POST /api/v1/bars", () => {
 
 describe("GET /api/v1/bars", () => {
   it("lists bars", async () => {
-    const { token } = await registerAndLogin();
-    await createBar(token, "Bar A", "bar-a");
-    await createBar(token, "Bar B", "bar-b");
+    const { cookie } = await registerAndLogin();
+    await createBar(cookie, "Bar A", "bar-a");
+    await createBar(cookie, "Bar B", "bar-b");
 
     const res = await request(app).get("/api/v1/bars");
 

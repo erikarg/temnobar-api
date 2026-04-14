@@ -25,12 +25,12 @@ afterAll(async () => {
 
 describe("POST /api/v1/upload/image", () => {
   it("uploads an image and returns url + thumb_url", async () => {
-    const { token } = await registerAndLogin();
+    const { cookie } = await registerAndLogin();
     const imageBuffer = await createTestImage();
 
     const res = await request(app)
       .post("/api/v1/upload/image")
-      .set("Authorization", `Bearer ${token}`)
+      .set("Cookie", cookie)
       .attach("file", imageBuffer, "test.jpg");
 
     expect(res.status).toBe(200);
@@ -53,22 +53,22 @@ describe("POST /api/v1/upload/image", () => {
   });
 
   it("rejects non-image file", async () => {
-    const { token } = await registerAndLogin();
+    const { cookie } = await registerAndLogin();
 
     const res = await request(app)
       .post("/api/v1/upload/image")
-      .set("Authorization", `Bearer ${token}`)
+      .set("Cookie", cookie)
       .attach("file", Buffer.from("not an image"), "test.txt");
 
     expect(res.status).toBe(400);
   });
 
   it("rejects request without file", async () => {
-    const { token } = await registerAndLogin();
+    const { cookie } = await registerAndLogin();
 
     const res = await request(app)
       .post("/api/v1/upload/image")
-      .set("Authorization", `Bearer ${token}`);
+      .set("Cookie", cookie);
 
     expect(res.status).toBe(400);
   });
@@ -84,12 +84,12 @@ describe("POST /api/v1/upload/image", () => {
   });
 
   it("serves uploaded image via static route", async () => {
-    const { token } = await registerAndLogin();
+    const { cookie } = await registerAndLogin();
     const imageBuffer = await createTestImage();
 
     const uploadRes = await request(app)
       .post("/api/v1/upload/image")
-      .set("Authorization", `Bearer ${token}`)
+      .set("Cookie", cookie)
       .attach("file", imageBuffer, "test.jpg");
 
     const imageRes = await request(app).get(uploadRes.body.data.url);
