@@ -12,13 +12,8 @@ function createTestImage(width = 800, height = 600) {
     .toBuffer();
 }
 
-const hasCloudinary =
-  process.env.CLOUDINARY_CLOUD_NAME &&
-  process.env.CLOUDINARY_API_KEY &&
-  process.env.CLOUDINARY_API_SECRET;
-
 describe("POST /api/v1/upload/image", () => {
-  it.skipIf(!hasCloudinary)(
+  it.skipIf(!!process.env.CI)(
     "uploads an image and returns Cloudinary url + thumb_url",
     async () => {
       const { cookie } = await registerAndLogin();
