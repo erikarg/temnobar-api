@@ -12,20 +12,32 @@ function createTestImage(width = 800, height = 600) {
     .toBuffer();
 }
 
+const hasCloudinary =
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET;
+
 describe("POST /api/v1/upload/image", () => {
-  it("uploads an image and returns Cloudinary url + thumb_url", async () => {
-    const { cookie } = await registerAndLogin();
-    const imageBuffer = await createTestImage();
+  it.skipIf(!hasCloudinary)(
+    "uploads an image and returns Cloudinary url + thumb_url",
+    async () => {
+      const { cookie } = await registerAndLogin();
+      const imageBuffer = await createTestImage();
 
-    const res = await request(app)
-      .post("/api/v1/upload/image")
-      .set("Cookie", cookie)
-      .attach("file", imageBuffer, "test.jpg");
+      const res = await request(app)
+        .post("/api/v1/upload/image")
+        .set("Cookie", cookie)
+        .attach("file", imageBuffer, "test.jpg");
 
-    expect(res.status).toBe(200);
-    expect(res.body.data.url).toMatch(/^https:\/\/res\.cloudinary\.com\/.+\.webp$/);
-    expect(res.body.data.thumb_url).toMatch(/^https:\/\/res\.cloudinary\.com\/.+_thumb\.webp$/);
-  });
+      expect(res.status).toBe(200);
+      expect(res.body.data.url).toMatch(
+        /^https:\/\/res\.cloudinary\.com\/.+\.webp$/,
+      );
+      expect(res.body.data.thumb_url).toMatch(
+        /^https:\/\/res\.cloudinary\.com\/.+_thumb\.webp$/,
+      );
+    },
+  );
 
   it("rejects non-image file", async () => {
     const { cookie } = await registerAndLogin();
