@@ -49,7 +49,7 @@ export async function list(input: ListProductsInput) {
       where,
       skip,
       take: per_page,
-      orderBy: [{ status: "desc" }, { created_at: "desc" }],
+      orderBy: [{ status: "asc" }, { created_at: "desc" }],
     }),
     prisma.product.count({ where }),
   ]);
