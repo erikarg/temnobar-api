@@ -1,4 +1,8 @@
-import { v2 as cloudinary } from "cloudinary";
+import {
+  v2 as cloudinary,
+  type UploadApiResponse,
+  type UploadApiErrorResponse,
+} from "cloudinary";
 import sharp from "sharp";
 import { createId } from "../../lib/id.js";
 import { env } from "../../lib/env.js";
@@ -15,17 +19,16 @@ const THUMB_WIDTH = 300;
 function uploadBuffer(
   buffer: Buffer,
   publicId: string,
-): Promise<{ secure_url: string }> {
+): Promise<UploadApiResponse> {
   return new Promise((resolve, reject) => {
-    cloudinary.uploader
-      .upload_stream(
-        { public_id: publicId, folder: "temnobar/products", format: "webp" },
-        (error, result) => {
-          if (error || !result) return reject(error);
-          resolve(result);
-        },
-      )
-      .end(buffer);
+    const stream = cloudinary.uploader.upload_stream(
+      { public_id: publicId, folder: "temnobar/products", format: "webp" },
+      (error?: UploadApiErrorResponse, result?: UploadApiResponse) => {
+        if (error || !result) return reject(error);
+        resolve(result);
+      },
+    );
+    stream.end(buffer);
   });
 }
 
