@@ -25,7 +25,7 @@ API REST moderna e robusta para gerenciamento completo de cardápios de bares. C
 | Banco de dados | PostgreSQL 16 |
 | ORM | Prisma |
 | Autenticação | JWT + bcrypt |
-| Upload | multer + sharp |
+| Upload | multer + sharp + Cloudinary |
 | Validação | Zod |
 | Testes | Vitest + Supertest |
 | Documentação | Swagger UI |
@@ -89,6 +89,9 @@ npm run dev
 | `PORT` | Porta do servidor | `3333` |
 | `NODE_ENV` | Ambiente de execução | `development` \| `production` \| `test` |
 | `API_URL` | URL base da API | `http://localhost:3333` |
+| `CLOUDINARY_CLOUD_NAME` | Nome do cloud Cloudinary | `my_cloud` |
+| `CLOUDINARY_API_KEY` | API key do Cloudinary | `123456789` |
+| `CLOUDINARY_API_SECRET` | API secret do Cloudinary | `abcdefg` |
 
 ---
 
@@ -186,7 +189,7 @@ modules/exemplo/
 - Geração de thumbnails otimizados (300px)
 - Resize inteligente preservando proporção
 - Limite de 5MB por arquivo
-- Armazenamento local com serving estático via Express
+- Hospedagem no **Cloudinary** com URLs públicas (HTTPS)
 
 ### Multi-bar
 
