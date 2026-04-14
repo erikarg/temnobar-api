@@ -1,38 +1,54 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-import { createId } from "../../lib/id.js";
+import { v2 as cloudinary } from "cloudinary";
 import sharp from "sharp";
+import { createId } from "../../lib/id.js";
+import { env } from "../../lib/env.js";
 
-const UPLOADS_DIR = path.resolve("uploads/products");
+cloudinary.config({
+  cloud_name: env.CLOUDINARY_CLOUD_NAME,
+  api_key: env.CLOUDINARY_API_KEY,
+  api_secret: env.CLOUDINARY_API_SECRET,
+});
+
 const MAX_WIDTH = 1200;
 const THUMB_WIDTH = 300;
 
-async function ensureDir() {
-  await fs.mkdir(UPLOADS_DIR, { recursive: true });
+function uploadBuffer(
+  buffer: Buffer,
+  publicId: string,
+): Promise<{ secure_url: string }> {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream(
+        { public_id: publicId, folder: "temnobar/products", format: "webp" },
+        (error, result) => {
+          if (error || !result) return reject(error);
+          resolve(result);
+        },
+      )
+      .end(buffer);
+  });
 }
 
 export async function processImage(buffer: Buffer) {
-  await ensureDir();
-
   const id = createId();
-  const filename = `${id}.webp`;
-  const thumbFilename = `${id}_thumb.webp`;
 
-  const filePath = path.join(UPLOADS_DIR, filename);
-  const thumbPath = path.join(UPLOADS_DIR, thumbFilename);
-
-  await sharp(buffer)
+  const optimized = await sharp(buffer)
     .resize(MAX_WIDTH, undefined, { withoutEnlargement: true })
     .webp({ quality: 80 })
-    .toFile(filePath);
+    .toBuffer();
 
-  await sharp(buffer)
+  const thumb = await sharp(buffer)
     .resize(THUMB_WIDTH, undefined, { withoutEnlargement: true })
     .webp({ quality: 70 })
-    .toFile(thumbPath);
+    .toBuffer();
+
+  const [main, thumbnail] = await Promise.all([
+    uploadBuffer(optimized, id),
+    uploadBuffer(thumb, `${id}_thumb`),
+  ]);
 
   return {
-    url: `/uploads/products/${filename}`,
-    thumb_url: `/uploads/products/${thumbFilename}`,
+    url: main.secure_url,
+    thumb_url: thumbnail.secure_url,
   };
 }
