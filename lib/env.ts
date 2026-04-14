@@ -8,7 +8,7 @@ const envSchema = z.object({
     .enum(["development", "production", "test"])
     .default("development"),
   API_URL: z.url(),
-  APP_URL: z.string().min(1),
+  APP_URL: z.string().default(""),
 });
 
 export const env = envSchema.parse(process.env);
