@@ -18,12 +18,12 @@ declare global {
 }
 
 export const authMiddleware: RequestHandler = (req, _res, next) => {
-  const header = req.headers.authorization;
-  if (!header?.startsWith("Bearer ")) {
+  const token = req.cookies.token;
+
+  if (!token) {
     throw new UnauthorizedError("Missing token");
   }
 
-  const token = header.slice(7);
   try {
     const payload = jwt.verify(token, env.JWT_SECRET) as AuthPayload;
     req.user = payload;

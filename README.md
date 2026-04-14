@@ -56,8 +56,8 @@ cp .env.example .env
 # Suba tudo com um comando
 docker compose up -d
 
-# A API estará disponível em http://localhost:3000
-# A documentação Swagger em http://localhost:3000/docs
+# A API estará disponível em http://localhost:3333
+# A documentação Swagger em http://localhost:3333/docs
 ```
 
 ### Sem Docker
@@ -86,9 +86,9 @@ npm run dev
 |----------|-----------|---------|
 | `DATABASE_URL` | String de conexão PostgreSQL | `postgresql://postgres:postgres@localhost:5432/temnobar` |
 | `JWT_SECRET` | Chave secreta para tokens JWT (mín. 32 caracteres) | `sua-chave-secreta-com-pelo-menos-32-caracteres` |
-| `PORT` | Porta do servidor | `3000` |
+| `PORT` | Porta do servidor | `3333` |
 | `NODE_ENV` | Ambiente de execução | `development` \| `production` \| `test` |
-| `API_URL` | URL base da API | `http://localhost:3000` |
+| `API_URL` | URL base da API | `http://localhost:3333` |
 
 ---
 

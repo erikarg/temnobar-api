@@ -10,3 +10,7 @@ export const loginSchema = z.object({
   email: z.email(),
   password: z.string().min(1),
 });
+
+export const selectBarSchema = z.object({
+  bar_id: z.string().cuid("ID do bar inválido"),
+});

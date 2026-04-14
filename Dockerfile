@@ -22,5 +22,5 @@ COPY --from=build /app/package.json ./package.json
 
 RUN mkdir -p uploads/products
 
-EXPOSE 3000
+EXPOSE 3333
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]

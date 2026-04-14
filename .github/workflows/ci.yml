@@ -9,9 +9,9 @@ on:
 env:
   DATABASE_URL: postgresql://postgres:postgres@localhost:5432/temnobar_test?schema=public
   JWT_SECRET: ci-test-secret-at-least-32-characters-long
-  PORT: "3000"
+  PORT: "3333"
   NODE_ENV: test
-  API_URL: http://localhost:3000
+  API_URL: http://localhost:3333
 
 jobs:
   check:

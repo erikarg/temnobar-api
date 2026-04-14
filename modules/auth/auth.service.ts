@@ -2,7 +2,11 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { prisma } from "../../database/prisma.js";
 import { env } from "../../lib/env.js";
-import { ConflictError, UnauthorizedError } from "../../lib/errors.js";
+import {
+  ConflictError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../../lib/errors.js";
 
 const SALT_ROUNDS = 10;
 const TOKEN_EXPIRY = "7d";
@@ -25,6 +29,7 @@ export async function register(data: {
       email: data.email,
       password_hash,
       name: data.name,
+      bar_id: null,
     },
   });
 
@@ -50,7 +55,13 @@ export async function login(email: string, password: string) {
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, name: true, bar_id: true, created_at: true },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      bar_id: true,
+      created_at: true,
+    },
   });
   return user;
 }
@@ -59,4 +70,21 @@ function signToken(userId: string, barId: string | null) {
   return jwt.sign({ sub: userId, bar_id: barId }, env.JWT_SECRET, {
     expiresIn: TOKEN_EXPIRY,
   });
+}
+
+export async function updateUser(userId: string, barId: string) {
+  const bar = await prisma.bar.findUnique({
+    where: { id: barId },
+  });
+
+  if (!bar) {
+    throw new NotFoundError("Bar not found");
+  }
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { bar_id: barId },
+  });
+
+  return user;
 }

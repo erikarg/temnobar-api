@@ -22,11 +22,11 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "${PORT:-3000}:3000"
+      - "${PORT:-3333}:3333"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/temnobar?schema=public
       JWT_SECRET: ${JWT_SECRET}
-      PORT: 3000
+      PORT: 3333
       NODE_ENV: ${NODE_ENV}
     volumes:
       - uploads:/app/uploads
