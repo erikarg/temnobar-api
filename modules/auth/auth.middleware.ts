@@ -18,7 +18,10 @@ declare global {
 }
 
 export const authMiddleware: RequestHandler = (req, _res, next) => {
-  const token = req.cookies.token;
+  const bearer = req.headers.authorization?.startsWith("Bearer ")
+    ? req.headers.authorization.slice(7)
+    : undefined;
+  const token = bearer ?? req.cookies.token;
 
   if (!token) {
     throw new UnauthorizedError("Missing token");

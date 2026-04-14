@@ -59,7 +59,7 @@ authRoutes.post("/register", validate(registerSchema), async (req, res) => {
 
   res.cookie("token", token, cookieOptions);
 
-  return res.status(201).json({ user });
+  return res.status(201).json({ user, token });
 });
 
 /**
@@ -100,7 +100,7 @@ authRoutes.post("/login", validate(loginSchema), async (req, res) => {
     req.body.password,
   );
   res.cookie("token", token, cookieOptions);
-  return res.json({ user });
+  return res.json({ user, token });
 });
 
 /**
