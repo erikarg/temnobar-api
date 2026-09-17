@@ -3,10 +3,13 @@ import request from "supertest";
 import { app } from "../app.js";
 import { registerAndLogin, createBar } from "./helpers.js";
 
-async function setupBarAndAuth() {
-  const { cookie } = await registerAndLogin();
-  const bar = await createBar(cookie);
-  return { cookie, barId: bar.id };
+async function setupBarAndAuth(
+  email = "test@example.com",
+  slug = "test-bar",
+) {
+  const { cookie } = await registerAndLogin(email);
+  const { bar, cookie: barCookie } = await createBar(cookie, "Test Bar", slug);
+  return { cookie: barCookie, barId: bar.id };
 }
 
 describe("POST /api/v1/products", () => {
@@ -203,5 +206,93 @@ describe("DELETE /api/v1/products/:id", () => {
       .set("Cookie", cookie);
 
     expect(res.status).toBe(404);
+  });
+});
+
+describe("product ownership", () => {
+  async function setupTwoBars() {
+    const owner = await setupBarAndAuth("owner@example.com", "owner-bar");
+    const intruder = await setupBarAndAuth("intruder@example.com", "intruder-bar");
+
+    const created = await request(app)
+      .post("/api/v1/products")
+      .set("Cookie", owner.cookie)
+      .send({
+        codigo_produto: "OWNED",
+        descricao_produto: "Owner product",
+        bar_id: owner.barId,
+      });
+
+    return { owner, intruder, productId: created.body.data.id as string };
+  }
+
+  it("hides products of another bar from updates", async () => {
+    const { intruder, productId } = await setupTwoBars();
+
+    const res = await request(app)
+      .put(`/api/v1/products/${productId}`)
+      .set("Cookie", intruder.cookie)
+      .send({ descricao_produto: "Hijacked" });
+
+    expect(res.status).toBe(404);
+  });
+
+  it("hides products of another bar from deletion", async () => {
+    const { intruder, productId } = await setupTwoBars();
+
+    const res = await request(app)
+      .delete(`/api/v1/products/${productId}`)
+      .set("Cookie", intruder.cookie);
+
+    expect(res.status).toBe(404);
+
+    const check = await request(app).get(`/api/v1/products/${productId}`);
+    expect(check.status).toBe(200);
+  });
+
+  it("rejects creating a product for another bar", async () => {
+    const { owner, intruder } = await setupTwoBars();
+
+    const res = await request(app)
+      .post("/api/v1/products")
+      .set("Cookie", intruder.cookie)
+      .send({
+        codigo_produto: "CROSS",
+        descricao_produto: "Cross bar",
+        bar_id: owner.barId,
+      });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("rejects mutations from a user without a selected bar", async () => {
+    const { cookie } = await registerAndLogin("nobar@example.com");
+
+    const res = await request(app)
+      .post("/api/v1/products")
+      .set("Cookie", cookie)
+      .send({
+        codigo_produto: "NOBAR",
+        descricao_produto: "No bar",
+        bar_id: "some-bar-id",
+      });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("rejects state-changing requests from a disallowed origin", async () => {
+    const { cookie, barId } = await setupBarAndAuth();
+
+    const res = await request(app)
+      .post("/api/v1/products")
+      .set("Cookie", cookie)
+      .set("Origin", "https://evil.example.com")
+      .send({
+        codigo_produto: "CSRF",
+        descricao_produto: "Cross site",
+        bar_id: barId,
+      });
+
+    expect(res.status).toBe(403);
   });
 });

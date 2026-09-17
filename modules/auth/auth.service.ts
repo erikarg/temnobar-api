@@ -81,10 +81,15 @@ export async function updateUser(userId: string, barId: string) {
     throw new NotFoundError("Bar not found");
   }
 
+  // select explicito: o retorno cru do Prisma inclui password_hash.
   const user = await prisma.user.update({
     where: { id: userId },
     data: { bar_id: barId },
+    select: { id: true, email: true, name: true, bar_id: true },
   });
 
-  return user;
+  // Token reemitido para a claim bar_id nao ficar defasada ate expirar.
+  const token = signToken(user.id, user.bar_id);
+
+  return { user, token };
 }

@@ -1,10 +1,26 @@
 import { Router, type CookieOptions } from "express";
+import rateLimit from "express-rate-limit";
 import { validate } from "../../middleware/validate.js";
 import { authMiddleware } from "./auth.middleware.js";
 import { loginSchema, registerSchema, selectBarSchema } from "./auth.schema.js";
 import * as authService from "./auth.service.js";
 
 export const authRoutes = Router();
+
+// Freio para credential stuffing e criacao massiva de contas (OWASP A07).
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === "test",
+  message: {
+    error: {
+      code: "TOO_MANY_REQUESTS",
+      message: "Too many attempts, try again later",
+    },
+  },
+});
 const cookieOptions: CookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
@@ -31,7 +47,7 @@ const cookieOptions: CookieOptions = {
  *                 format: email
  *               password:
  *                 type: string
- *                 minLength: 6
+ *                 minLength: 8
  *               name:
  *                 type: string
  *     responses:
@@ -54,13 +70,18 @@ const cookieOptions: CookieOptions = {
  *       409:
  *         description: Email já registrado
  */
-authRoutes.post("/register", validate(registerSchema), async (req, res) => {
-  const { user, token } = await authService.register(req.body);
+authRoutes.post(
+  "/register",
+  authLimiter,
+  validate(registerSchema),
+  async (req, res) => {
+    const { user, token } = await authService.register(req.body);
 
-  res.cookie("token", token, cookieOptions);
+    res.cookie("token", token, cookieOptions);
 
-  return res.status(201).json({ user, token });
-});
+    return res.status(201).json({ user });
+  },
+);
 
 /**
  * @swagger
@@ -94,14 +115,19 @@ authRoutes.post("/register", validate(registerSchema), async (req, res) => {
  *       401:
  *         description: Credenciais inválidas
  */
-authRoutes.post("/login", validate(loginSchema), async (req, res) => {
-  const { user, token } = await authService.login(
-    req.body.email,
-    req.body.password,
-  );
-  res.cookie("token", token, cookieOptions);
-  return res.json({ user, token });
-});
+authRoutes.post(
+  "/login",
+  authLimiter,
+  validate(loginSchema),
+  async (req, res) => {
+    const { user, token } = await authService.login(
+      req.body.email,
+      req.body.password,
+    );
+    res.cookie("token", token, cookieOptions);
+    return res.json({ user });
+  },
+);
 
 /**
  * @swagger
@@ -198,7 +224,9 @@ authRoutes.post(
 
     const userId = req.user!.sub;
 
-    const user = await authService.updateUser(userId, bar_id);
+    const { user, token } = await authService.updateUser(userId, bar_id);
+
+    res.cookie("token", token, cookieOptions);
 
     return res.json({ user });
   },

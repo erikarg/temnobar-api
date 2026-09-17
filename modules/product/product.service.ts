@@ -1,6 +1,6 @@
 import type { ProductStatus } from "../../generated/prisma/enums.js";
 import { prisma } from "../../database/prisma.js";
-import { NotFoundError } from "../../lib/errors.js";
+import { ForbiddenError, NotFoundError } from "../../lib/errors.js";
 
 interface CreateProductInput {
   codigo_produto: string;
@@ -27,7 +27,10 @@ interface ListProductsInput {
   bar_id?: string;
 }
 
-export async function create(data: CreateProductInput) {
+export async function create(data: CreateProductInput, actorBarId: string) {
+  if (data.bar_id !== actorBarId) {
+    throw new ForbiddenError("Product does not belong to your bar");
+  }
   return prisma.product.create({ data });
 }
 
@@ -71,12 +74,23 @@ export async function getById(id: string) {
   return product;
 }
 
-export async function update(id: string, data: UpdateProductInput) {
-  await getById(id);
+export async function update(
+  id: string,
+  data: UpdateProductInput,
+  actorBarId: string,
+) {
+  await getOwnedById(id, actorBarId);
   return prisma.product.update({ where: { id }, data });
 }
 
-export async function remove(id: string) {
-  await getById(id);
+export async function remove(id: string, actorBarId: string) {
+  await getOwnedById(id, actorBarId);
   return prisma.product.delete({ where: { id } });
+}
+
+// 404 em vez de 403 quando o produto e de outro bar: nao revela que o id existe.
+async function getOwnedById(id: string, actorBarId: string) {
+  const product = await prisma.product.findUnique({ where: { id } });
+  if (!product || product.bar_id !== actorBarId) throw new NotFoundError("Product");
+  return product;
 }

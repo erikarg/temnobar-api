@@ -83,3 +83,41 @@ describe("GET /api/v1/auth/me", () => {
     expect(res.status).toBe(401);
   });
 });
+
+describe("auth response payloads", () => {
+  it("keeps the token out of the response body", async () => {
+    const res = await request(app)
+      .post("/api/v1/auth/register")
+      .send({ email: "nobody@example.com", password: "password123", name: "No Token" });
+
+    expect(res.status).toBe(201);
+    expect(res.body.token).toBeUndefined();
+    expect(res.headers["set-cookie"]).toBeDefined();
+  });
+
+  it("rejects passwords shorter than 8 characters", async () => {
+    const res = await request(app)
+      .post("/api/v1/auth/register")
+      .send({ email: "short@example.com", password: "1234567", name: "Short" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("never exposes password_hash when selecting a bar", async () => {
+    const { cookie } = await registerAndLogin("select@example.com");
+
+    const bar = await request(app)
+      .post("/api/v1/bars")
+      .set("Cookie", cookie)
+      .send({ nome: "Select Bar", slug: "select-bar" });
+
+    const res = await request(app)
+      .post("/api/v1/auth/select-bar")
+      .set("Cookie", cookie)
+      .send({ bar_id: bar.body.data.id });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.bar_id).toBe(bar.body.data.id);
+    expect(res.body.user.password_hash).toBeUndefined();
+  });
+});

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { validate, validateQuery } from "../../middleware/validate.js";
-import { authMiddleware } from "../auth/auth.middleware.js";
+import { authMiddleware, requireBar } from "../auth/auth.middleware.js";
 import {
   createProductSchema,
   listProductsQuerySchema,
@@ -53,15 +53,18 @@ export const productRoutes = Router();
  *         description: Dados inválidos
  *       401:
  *         description: Não autorizado
+ *       403:
+ *         description: Sem bar selecionado ou bar diferente do usuário
  *       409:
  *         description: Código de produto duplicado neste bar
  */
 productRoutes.post(
   "/",
   authMiddleware,
+  requireBar,
   validate(createProductSchema),
   async (req, res) => {
-    const product = await productService.create(req.body);
+    const product = await productService.create(req.body, req.barId!);
     res.status(201).json({ data: product });
   },
 );
@@ -199,17 +202,21 @@ productRoutes.get("/:id", async (req, res) => {
  *         description: Produto atualizado
  *       401:
  *         description: Não autorizado
+ *       403:
+ *         description: Sem bar selecionado
  *       404:
- *         description: Produto não encontrado
+ *         description: Produto não encontrado ou de outro bar
  */
 productRoutes.put(
   "/:id",
   authMiddleware,
+  requireBar,
   validate(updateProductSchema),
   async (req, res) => {
     const product = await productService.update(
       req.params.id as string,
       req.body,
+      req.barId!,
     );
     res.json({ data: product });
   },
@@ -234,10 +241,12 @@ productRoutes.put(
  *         description: Produto excluído
  *       401:
  *         description: Não autorizado
+ *       403:
+ *         description: Sem bar selecionado
  *       404:
- *         description: Produto não encontrado
+ *         description: Produto não encontrado ou de outro bar
  */
-productRoutes.delete("/:id", authMiddleware, async (req, res) => {
-  await productService.remove(req.params.id as string);
+productRoutes.delete("/:id", authMiddleware, requireBar, async (req, res) => {
+  await productService.remove(req.params.id as string, req.barId!);
   res.status(204).send();
 });

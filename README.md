@@ -131,7 +131,7 @@ modules/exemplo/
 | Método | Rota | Autenticação | Descrição |
 |--------|------|:------------:|-----------|
 | `POST` | `/api/v1/auth/register` | — | Cria uma nova conta |
-| `POST` | `/api/v1/auth/login` | — | Realiza login e retorna token JWT |
+| `POST` | `/api/v1/auth/login` | — | Realiza login e envia o JWT em cookie httpOnly |
 | `GET` | `/api/v1/auth/me` | Bearer | Retorna o perfil do usuário autenticado |
 
 ### Bares
@@ -145,11 +145,11 @@ modules/exemplo/
 
 | Método | Rota | Autenticação | Descrição |
 |--------|------|:------------:|-----------|
-| `POST` | `/api/v1/products` | Bearer | Cadastra um produto |
+| `POST` | `/api/v1/products` | Bearer | Cadastra um produto no bar do usuário |
 | `GET` | `/api/v1/products` | — | Lista produtos (com paginação, filtro e busca) |
 | `GET` | `/api/v1/products/:id` | — | Retorna um produto específico |
-| `PUT` | `/api/v1/products/:id` | Bearer | Atualiza um produto |
-| `DELETE` | `/api/v1/products/:id` | Bearer | Remove um produto |
+| `PUT` | `/api/v1/products/:id` | Bearer | Atualiza um produto do próprio bar |
+| `DELETE` | `/api/v1/products/:id` | Bearer | Remove um produto do próprio bar |
 
 ### Upload
 

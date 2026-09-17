@@ -23,6 +23,8 @@ export async function registerAndLogin(
   };
 }
 
+// Espelha o fluxo real do app: criar o bar e, em seguida, vincular-se a ele.
+// O select-bar reemite o token, entao devolvemos o cookie atualizado.
 export async function createBar(
   cookie: string,
   nome = "Test Bar",
@@ -32,5 +34,15 @@ export async function createBar(
     .post("/api/v1/bars")
     .set("Cookie", cookie)
     .send({ nome, slug });
-  return res.body.data as { id: string; nome: string; slug: string };
+
+  const bar = res.body.data as { id: string; nome: string; slug: string };
+
+  if (!bar?.id) return { bar, cookie };
+
+  const selected = await request(app)
+    .post("/api/v1/auth/select-bar")
+    .set("Cookie", cookie)
+    .send({ bar_id: bar.id });
+
+  return { bar, cookie: extractCookie(selected) || cookie };
 }
