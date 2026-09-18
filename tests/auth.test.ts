@@ -121,3 +121,27 @@ describe("auth response payloads", () => {
     expect(res.body.user.password_hash).toBeUndefined();
   });
 });
+
+describe("login payload", () => {
+  it("returns the selected bar so the app does not ask for it again", async () => {
+    const { cookie } = await registerAndLogin("comBar@example.com", "password123");
+
+    const bar = await request(app)
+      .post("/api/v1/bars")
+      .set("Cookie", cookie)
+      .send({ nome: "Bar do Login", slug: "bar-do-login" });
+
+    await request(app)
+      .post("/api/v1/auth/select-bar")
+      .set("Cookie", cookie)
+      .send({ bar_id: bar.body.data.id });
+
+    const res = await request(app)
+      .post("/api/v1/auth/login")
+      .send({ email: "comBar@example.com", password: "password123" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.user.bar_id).toBe(bar.body.data.id);
+    expect(res.body.user.password_hash).toBeUndefined();
+  });
+});

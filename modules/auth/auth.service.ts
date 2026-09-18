@@ -34,7 +34,7 @@ export async function register(data: {
   });
 
   const token = signToken(user.id, user.bar_id);
-  return { user: { id: user.id, email: user.email, name: user.name }, token };
+  return { user: publicUser(user), token };
 }
 
 export async function login(email: string, password: string) {
@@ -49,7 +49,7 @@ export async function login(email: string, password: string) {
   }
 
   const token = signToken(user.id, user.bar_id);
-  return { user: { id: user.id, email: user.email, name: user.name }, token };
+  return { user: publicUser(user), token };
 }
 
 export async function getMe(userId: string) {
@@ -64,6 +64,21 @@ export async function getMe(userId: string) {
     },
   });
   return user;
+}
+
+// bar_id na resposta: sem ele o app manda para a seleção de bar a cada login.
+function publicUser(user: {
+  id: string;
+  email: string;
+  name: string;
+  bar_id: string | null;
+}) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    bar_id: user.bar_id,
+  };
 }
 
 function signToken(userId: string, barId: string | null) {
