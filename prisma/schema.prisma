@@ -14,31 +14,68 @@ enum ProductStatus {
 }
 
 model Bar {
-  id         String    @id @default(cuid())
+  id         String     @id @default(cuid())
   nome       String
-  slug       String    @unique
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
+  slug       String     @unique
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
   products   Product[]
+  categories Category[]
 
   @@map("bars")
 }
 
+model Category {
+  id         String    @id @default(cuid())
+  nome       String
+  slug       String
+  ordem      Int       @default(0)
+  bar_id     String
+  bar        Bar       @relation(fields: [bar_id], references: [id])
+  products   Product[]
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  @@unique([bar_id, slug])
+  @@index([bar_id, ordem])
+  @@map("categories")
+}
+
 model Product {
-  id                String        @id @default(cuid())
+  id                String                   @id @default(cuid())
   codigo_produto    String
   descricao_produto String
-  status            ProductStatus @default(ACTIVE)
+  status            ProductStatus            @default(ACTIVE)
   foto_produto      String?
   thumb_produto     String?
+  preco             Int                      @default(0)
+  tags              String[]                 @default([])
   bar_id            String
-  bar               Bar           @relation(fields: [bar_id], references: [id])
-  created_at        DateTime      @default(now())
-  updated_at        DateTime      @updatedAt
+  bar               Bar                      @relation(fields: [bar_id], references: [id])
+  category_id       String?
+  category          Category?                @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  availability_logs ProductAvailabilityLog[]
+  created_at        DateTime                 @default(now())
+  updated_at        DateTime                 @updatedAt
 
   @@unique([bar_id, codigo_produto])
   @@index([bar_id, status])
+  @@index([category_id])
   @@map("products")
+}
+
+model ProductAvailabilityLog {
+  id         String        @id @default(cuid())
+  product_id String
+  product    Product       @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  bar_id     String
+  status     ProductStatus
+  user_id    String?
+  created_at DateTime      @default(now())
+
+  @@index([product_id, created_at])
+  @@index([bar_id, created_at])
+  @@map("product_availability_logs")
 }
 
 model User {

@@ -149,7 +149,25 @@ modules/exemplo/
 | `GET` | `/api/v1/products` | — | Lista produtos (com paginação, filtro e busca) |
 | `GET` | `/api/v1/products/:id` | — | Retorna um produto específico |
 | `PUT` | `/api/v1/products/:id` | Bearer | Atualiza um produto do próprio bar |
+| `PATCH` | `/api/v1/products/:id/status` | Bearer | Alterna a disponibilidade (ação de um toque) |
+| `GET` | `/api/v1/products/:id/historico` | Bearer | Histórico de disponibilidade do produto |
+| `GET` | `/api/v1/products/health` | Bearer | Saúde do cardápio (sem foto, sem preço, mais esgotam) |
 | `DELETE` | `/api/v1/products/:id` | Bearer | Remove um produto do próprio bar |
+
+### Categorias
+
+| Método | Rota | Autenticação | Descrição |
+|--------|------|:------------:|-----------|
+| `GET` | `/api/v1/categories` | Bearer | Lista as seções do cardápio com contagem de itens |
+| `POST` | `/api/v1/categories` | Bearer | Cria uma seção (slug derivado do nome) |
+| `PUT` | `/api/v1/categories/:id` | Bearer | Renomeia ou reordena uma seção |
+| `DELETE` | `/api/v1/categories/:id` | Bearer | Exclui a seção; os produtos ficam sem categoria |
+
+### Cardápio público
+
+| Método | Rota | Autenticação | Descrição |
+|--------|------|:------------:|-----------|
+| `GET` | `/api/v1/public/bares/:slug/cardapio` | — | Cardápio agrupado por seção; item esgotado aparece como indisponível |
 
 ### Upload
 

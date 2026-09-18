@@ -14,7 +14,9 @@ if (!isLocalTestDatabase) {
 }
 
 beforeEach(async () => {
+  await prisma.$executeRawUnsafe('DELETE FROM "product_availability_logs"');
   await prisma.$executeRawUnsafe('DELETE FROM "products"');
+  await prisma.$executeRawUnsafe('DELETE FROM "categories"');
   await prisma.$executeRawUnsafe('DELETE FROM "bars"');
   await prisma.$executeRawUnsafe('DELETE FROM "users"');
 });

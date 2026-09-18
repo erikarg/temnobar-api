@@ -5,6 +5,7 @@ import {
   createProductSchema,
   listProductsQuerySchema,
   updateProductSchema,
+  updateStatusSchema,
 } from "./product.schema.js";
 import * as productService from "./product.service.js";
 
@@ -64,7 +65,11 @@ productRoutes.post(
   requireBar,
   validate(createProductSchema),
   async (req, res) => {
-    const product = await productService.create(req.body, req.barId!);
+    const product = await productService.create(
+      req.body,
+      req.barId!,
+      req.user!.sub,
+    );
     res.status(201).json({ data: product });
   },
 );
@@ -137,6 +142,28 @@ productRoutes.get(
     res.json(result);
   },
 );
+
+/**
+ * @swagger
+ * /api/v1/products/health:
+ *   get:
+ *     tags: [Products]
+ *     summary: Saúde do cardápio do bar do usuário
+ *     description: Indicadores que não dependem de dados de venda — itens sem foto, sem preço, sem categoria, nunca editados e os que mais esgotam na janela recente.
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Indicadores do cardápio
+ *       401:
+ *         description: Não autorizado
+ *       403:
+ *         description: Sem bar selecionado
+ */
+productRoutes.get("/health", authMiddleware, requireBar, async (req, res) => {
+  const data = await productService.health(req.barId!);
+  res.json({ data });
+});
 
 /**
  * @swagger
@@ -217,6 +244,7 @@ productRoutes.put(
       req.params.id as string,
       req.body,
       req.barId!,
+      req.user!.sub,
     );
     res.json({ data: product });
   },
@@ -250,3 +278,84 @@ productRoutes.delete("/:id", authMiddleware, requireBar, async (req, res) => {
   await productService.remove(req.params.id as string, req.barId!);
   res.status(204).send();
 });
+
+/**
+ * @swagger
+ * /api/v1/products/{id}/status:
+ *   patch:
+ *     tags: [Products]
+ *     summary: Alternar disponibilidade do produto
+ *     description: Ação de um toque usada no balcão. Cada mudança é registrada no histórico de disponibilidade.
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [ACTIVE, INACTIVE]
+ *     responses:
+ *       200:
+ *         description: Status atualizado
+ *       404:
+ *         description: Produto não encontrado ou de outro bar
+ */
+productRoutes.patch(
+  "/:id/status",
+  authMiddleware,
+  requireBar,
+  validate(updateStatusSchema),
+  async (req, res) => {
+    const product = await productService.setStatus(
+      req.params.id as string,
+      req.body.status,
+      req.barId!,
+      req.user!.sub,
+    );
+    res.json({ data: product });
+  },
+);
+
+/**
+ * @swagger
+ * /api/v1/products/{id}/historico:
+ *   get:
+ *     tags: [Products]
+ *     summary: Histórico de disponibilidade do produto
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Últimas mudanças de disponibilidade
+ *       404:
+ *         description: Produto não encontrado ou de outro bar
+ */
+productRoutes.get(
+  "/:id/historico",
+  authMiddleware,
+  requireBar,
+  async (req, res) => {
+    const data = await productService.availabilityHistory(
+      req.params.id as string,
+      req.barId!,
+    );
+    res.json({ data });
+  },
+);

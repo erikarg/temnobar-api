@@ -296,3 +296,170 @@ describe("product ownership", () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe("price, tags and availability log", () => {
+  async function setupWithCategory() {
+    const { cookie, barId } = await setupBarAndAuth("preco@example.com", "preco-bar");
+    const category = await request(app)
+      .post("/api/v1/categories")
+      .set("Cookie", cookie)
+      .send({ nome: "Chopps" });
+    return { cookie, barId, categoryId: category.body.data.id as string };
+  }
+
+  it("stores price in cents, tags and category", async () => {
+    const { cookie, barId, categoryId } = await setupWithCategory();
+
+    const res = await request(app)
+      .post("/api/v1/products")
+      .set("Cookie", cookie)
+      .send({
+        codigo_produto: "CERV010",
+        descricao_produto: "Chopp Pilsen 500ml",
+        bar_id: barId,
+        preco: 1490,
+        tags: ["low-abv", "novidade"],
+        category_id: categoryId,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.preco).toBe(1490);
+    expect(res.body.data.tags).toEqual(["low-abv", "novidade"]);
+    expect(res.body.data.category_id).toBe(categoryId);
+  });
+
+  it("rejects a tag outside the vocabulary", async () => {
+    const { cookie, barId } = await setupWithCategory();
+
+    const res = await request(app)
+      .post("/api/v1/products")
+      .set("Cookie", cookie)
+      .send({
+        codigo_produto: "CERV011",
+        descricao_produto: "Chopp",
+        bar_id: barId,
+        tags: ["promocao-relampago"],
+      });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a category from another bar", async () => {
+    const owner = await setupWithCategory();
+    const intruder = await setupBarAndAuth("outro@example.com", "outro-bar");
+
+    const res = await request(app)
+      .post("/api/v1/products")
+      .set("Cookie", intruder.cookie)
+      .send({
+        codigo_produto: "CERV012",
+        descricao_produto: "Chopp",
+        bar_id: intruder.barId,
+        category_id: owner.categoryId,
+      });
+
+    expect(res.status).toBe(404);
+  });
+
+  it("toggles availability and records the change", async () => {
+    const { cookie, barId } = await setupWithCategory();
+
+    const created = await request(app)
+      .post("/api/v1/products")
+      .set("Cookie", cookie)
+      .send({
+        codigo_produto: "CERV013",
+        descricao_produto: "Chopp IPA",
+        bar_id: barId,
+      });
+
+    const patched = await request(app)
+      .patch(`/api/v1/products/${created.body.data.id}/status`)
+      .set("Cookie", cookie)
+      .send({ status: "INACTIVE" });
+
+    expect(patched.status).toBe(200);
+    expect(patched.body.data.status).toBe("INACTIVE");
+
+    const history = await request(app)
+      .get(`/api/v1/products/${created.body.data.id}/historico`)
+      .set("Cookie", cookie);
+
+    expect(history.status).toBe(200);
+    expect(history.body.data).toHaveLength(2);
+    expect(history.body.data[0].status).toBe("INACTIVE");
+  });
+
+  it("hides the status of a product from another bar", async () => {
+    const owner = await setupWithCategory();
+    const intruder = await setupBarAndAuth("intruso2@example.com", "intruso2-bar");
+
+    const created = await request(app)
+      .post("/api/v1/products")
+      .set("Cookie", owner.cookie)
+      .send({
+        codigo_produto: "CERV014",
+        descricao_produto: "Chopp Weiss",
+        bar_id: owner.barId,
+      });
+
+    const res = await request(app)
+      .patch(`/api/v1/products/${created.body.data.id}/status`)
+      .set("Cookie", intruder.cookie)
+      .send({ status: "INACTIVE" });
+
+    expect(res.status).toBe(404);
+  });
+});
+
+describe("GET /api/v1/products/health", () => {
+  it("summarises what is missing in the menu", async () => {
+    const { cookie, barId } = await setupBarAndAuth("saude@example.com", "saude-bar");
+
+    await request(app)
+      .post("/api/v1/products")
+      .set("Cookie", cookie)
+      .send({
+        codigo_produto: "SEM001",
+        descricao_produto: "Item sem preço e sem foto",
+        bar_id: barId,
+      });
+
+    const comPreco = await request(app)
+      .post("/api/v1/products")
+      .set("Cookie", cookie)
+      .send({
+        codigo_produto: "COM001",
+        descricao_produto: "Item com preço",
+        bar_id: barId,
+        preco: 1200,
+      });
+
+    await request(app)
+      .patch(`/api/v1/products/${comPreco.body.data.id}/status`)
+      .set("Cookie", cookie)
+      .send({ status: "INACTIVE" });
+
+    const res = await request(app)
+      .get("/api/v1/products/health")
+      .set("Cookie", cookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.total).toBe(2);
+    expect(res.body.data.sem_preco).toBe(1);
+    expect(res.body.data.sem_foto).toBe(2);
+    expect(res.body.data.sem_categoria).toBe(2);
+    expect(res.body.data.esgotados).toBe(1);
+    expect(res.body.data.mais_esgotam[0].codigo_produto).toBe("COM001");
+  });
+
+  it("rejects a user without a selected bar", async () => {
+    const { cookie } = await registerAndLogin("saudesembar@example.com");
+
+    const res = await request(app)
+      .get("/api/v1/products/health")
+      .set("Cookie", cookie);
+
+    expect(res.status).toBe(403);
+  });
+});
