@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "db:migrate": "npx prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "prisma db seed",
     "db:studio": "npx prisma studio",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",

@@ -88,7 +88,7 @@ npm run dev
 
 ### Seed
 
-`npm run db:seed` creates (or updates) a bar with slug `default`, 4 sections (Chopps e Cervejas, Drinks, Sem álcool, Cozinha) and 24 products with prices in cents, tags, real photos on Cloudinary and some availability history. It creates no users: register one and link it to the bar with `POST /auth/select-bar`.
+`npm run db:seed` creates (or updates) a bar with slug `default`, 4 sections (Chopps e Cervejas, Drinks, Sem álcool, Cozinha) and 24 products with prices in cents, tags, real photos on Cloudinary and some availability history. It creates no users: register one and link it to the bar with `POST /auth/select-bar`. The script runs through `prisma db seed`, which loads `.env`; against any database other than `localhost` it refuses to run unless `SEED_ALLOW_REMOTE=true` is set.
 
 ### Environment variables
 
@@ -423,7 +423,7 @@ npm run dev
 
 ### Seed
 
-`npm run db:seed` cria (ou atualiza) um bar com slug `default`, 4 seções (Chopps e Cervejas, Drinks, Sem álcool, Cozinha) e 24 produtos com preço em centavos, tags, fotos reais no Cloudinary e algum histórico de disponibilidade. Não cria usuários: cadastre um e vincule ao bar com `POST /auth/select-bar`.
+`npm run db:seed` cria (ou atualiza) um bar com slug `default`, 4 seções (Chopps e Cervejas, Drinks, Sem álcool, Cozinha) e 24 produtos com preço em centavos, tags, fotos reais no Cloudinary e algum histórico de disponibilidade. Não cria usuários: cadastre um e vincule ao bar com `POST /auth/select-bar`. O script roda via `prisma db seed`, que carrega o `.env`; em qualquer banco que não seja `localhost` ele se recusa a rodar sem `SEED_ALLOW_REMOTE=true`.
 
 ### Variáveis de ambiente
 
