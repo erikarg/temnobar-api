@@ -19,4 +19,22 @@ describe("GET /docs", () => {
     expect(res.body.paths).toHaveProperty("/api/v1/auth/login");
     expect(res.body.paths).toHaveProperty("/api/v1/public/bares/{slug}/cardapio");
   });
+
+  it("defines every security scheme the routes reference", async () => {
+    const res = await request(app).get("/docs/openapi.json");
+
+    const referenced = new Set<string>();
+    for (const operations of Object.values(res.body.paths)) {
+      for (const operation of Object.values(operations as Record<string, { security?: Record<string, string[]>[] }>)) {
+        for (const requirement of operation.security ?? []) {
+          for (const name of Object.keys(requirement)) referenced.add(name);
+        }
+      }
+    }
+
+    expect(referenced.size).toBeGreaterThan(0);
+    for (const name of referenced) {
+      expect(res.body.components.securitySchemes).toHaveProperty(name);
+    }
+  });
 });

@@ -33,6 +33,12 @@ export const swaggerSpec = swaggerJsdoc({
           scheme: "bearer",
           bearerFormat: "JWT",
         },
+        // Sessao do navegador: o login grava o JWT no cookie httpOnly "token".
+        cookieAuth: {
+          type: "apiKey",
+          in: "cookie",
+          name: "token",
+        },
       },
       schemas: {
         Product: {
