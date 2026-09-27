@@ -1,3 +1,4 @@
+import type { Prisma } from "../../generated/prisma/client.js";
 import type { ProductStatus } from "../../generated/prisma/enums.js";
 import { prisma } from "../../database/prisma.js";
 import { ForbiddenError, NotFoundError } from "../../lib/errors.js";
@@ -47,11 +48,12 @@ export async function create(
 
   await assertCategoryBelongsToBar(data.category_id, actorBarId);
 
-  const product = await prisma.product.create({ data });
-
-  await logAvailability(product.id, product.bar_id, product.status, actorUserId);
-
-  return product;
+  // Produto e historico na mesma transacao: um nao existe sem o outro.
+  return prisma.$transaction(async (tx) => {
+    const product = await tx.product.create({ data });
+    await logAvailability(tx, product.id, product.bar_id, product.status, actorUserId);
+    return product;
+  });
 }
 
 export async function list(input: ListProductsInput) {
@@ -111,13 +113,15 @@ export async function update(
     await assertCategoryBelongsToBar(data.category_id, actorBarId);
   }
 
-  const product = await prisma.product.update({ where: { id }, data });
+  return prisma.$transaction(async (tx) => {
+    const product = await tx.product.update({ where: { id }, data });
 
-  if (data.status && data.status !== current.status) {
-    await logAvailability(product.id, product.bar_id, product.status, actorUserId);
-  }
+    if (data.status && data.status !== current.status) {
+      await logAvailability(tx, product.id, product.bar_id, product.status, actorUserId);
+    }
 
-  return product;
+    return product;
+  });
 }
 
 export async function setStatus(
@@ -130,11 +134,11 @@ export async function setStatus(
 
   if (current.status === status) return current;
 
-  const product = await prisma.product.update({ where: { id }, data: { status } });
-
-  await logAvailability(product.id, product.bar_id, product.status, actorUserId);
-
-  return product;
+  return prisma.$transaction(async (tx) => {
+    const product = await tx.product.update({ where: { id }, data: { status } });
+    await logAvailability(tx, product.id, product.bar_id, product.status, actorUserId);
+    return product;
+  });
 }
 
 export async function remove(id: string, actorBarId: string) {
@@ -219,12 +223,13 @@ async function assertCategoryBelongsToBar(
 }
 
 function logAvailability(
+  tx: Prisma.TransactionClient,
   productId: string,
   barId: string,
   status: ProductStatus,
   userId?: string,
 ) {
-  return prisma.productAvailabilityLog.create({
+  return tx.productAvailabilityLog.create({
     data: { product_id: productId, bar_id: barId, status, user_id: userId ?? null },
   });
 }

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import { app } from "../app.js";
+import { prisma } from "../database/prisma.js";
 import { registerAndLogin, createBar } from "./helpers.js";
 
 async function setupBarAndAuth(
@@ -388,6 +389,64 @@ describe("price, tags and availability log", () => {
     expect(history.status).toBe(200);
     expect(history.body.data).toHaveLength(2);
     expect(history.body.data[0].status).toBe("INACTIVE");
+  });
+
+  it("records the change when the status is edited through a full update", async () => {
+    const { cookie, barId } = await setupWithCategory();
+
+    const created = await request(app)
+      .post("/api/v1/products")
+      .set("Cookie", cookie)
+      .send({
+        codigo_produto: "CERV015",
+        descricao_produto: "Chopp Stout",
+        bar_id: barId,
+      });
+
+    await request(app)
+      .put(`/api/v1/products/${created.body.data.id}`)
+      .set("Cookie", cookie)
+      .send({ status: "INACTIVE" });
+
+    const history = await request(app)
+      .get(`/api/v1/products/${created.body.data.id}/historico`)
+      .set("Cookie", cookie);
+
+    expect(history.body.data).toHaveLength(2);
+    expect(history.body.data[0].status).toBe("INACTIVE");
+  });
+
+  it("keeps the product unchanged when its history cannot be written", async () => {
+    const { cookie, barId } = await setupWithCategory();
+
+    const created = await request(app)
+      .post("/api/v1/products")
+      .set("Cookie", cookie)
+      .send({
+        codigo_produto: "CERV016",
+        descricao_produto: "Chopp Lager",
+        bar_id: barId,
+      });
+
+    // Forca a falha na escrita do historico, no proprio banco.
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE "product_availability_logs" ADD CONSTRAINT "reject_all" CHECK (false) NOT VALID',
+    );
+    try {
+      const patched = await request(app)
+        .patch(`/api/v1/products/${created.body.data.id}/status`)
+        .set("Cookie", cookie)
+        .send({ status: "INACTIVE" });
+
+      expect(patched.status).toBe(500);
+    } finally {
+      await prisma.$executeRawUnsafe(
+        'ALTER TABLE "product_availability_logs" DROP CONSTRAINT "reject_all"',
+      );
+    }
+
+    const product = await request(app).get(`/api/v1/products/${created.body.data.id}`);
+    expect(product.body.data.status).toBe("ACTIVE");
   });
 
   it("hides the status of a product from another bar", async () => {
