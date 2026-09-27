@@ -51,10 +51,10 @@ export const uploadRoutes = Router();
  *                   properties:
  *                     url:
  *                       type: string
- *                       example: "/uploads/products/abc123.webp"
+ *                       example: "https://res.cloudinary.com/demo/image/upload/v1/temnobar/products/abc123.webp"
  *                     thumb_url:
  *                       type: string
- *                       example: "/uploads/products/abc123_thumb.webp"
+ *                       example: "https://res.cloudinary.com/demo/image/upload/v1/temnobar/products/abc123_thumb.webp"
  *       400:
  *         description: Arquivo ausente ou tipo inválido
  *       401:
