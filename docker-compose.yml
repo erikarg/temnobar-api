@@ -27,13 +27,15 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/temnobar?schema=public
       JWT_SECRET: ${JWT_SECRET}
       PORT: 3333
-      NODE_ENV: ${NODE_ENV}
-    volumes:
-      - uploads:/app/uploads
+      NODE_ENV: ${NODE_ENV:-production}
+      API_URL: ${API_URL:-http://localhost:3333}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   pgdata:
-  uploads:
