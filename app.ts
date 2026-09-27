@@ -8,8 +8,7 @@ import { uploadRoutes } from "./modules/upload/upload.routes.js";
 import { barRoutes } from "./modules/bar/bar.routes.js";
 import { categoryRoutes } from "./modules/category/category.routes.js";
 import { publicRoutes } from "./modules/public/public.routes.js";
-import swaggerUi from "swagger-ui-express";
-import { swaggerSpec } from "./docs/swagger.js";
+import { swaggerHtml, swaggerSpec } from "./docs/swagger.js";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import { originGuard } from "./middleware/origin-guard.js";
@@ -50,7 +49,12 @@ app.use("/api/v1/upload", uploadRoutes);
 app.use("/api/v1/bars", barRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/public", publicRoutes);
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get("/docs/openapi.json", (_req, res) => {
+  res.json(swaggerSpec);
+});
+app.get("/docs", (_req, res) => {
+  res.type("html").send(swaggerHtml);
+});
 
 app.get("/api/v1/health", (_req, res) => {
   res.json({ status: "ok" });
