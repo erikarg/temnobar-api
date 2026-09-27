@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import path from "node:path";
 import { errorHandler } from "./middleware/error-handler.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { productRoutes } from "./modules/product/product.routes.js";
@@ -37,11 +36,6 @@ app.use(
 app.use(cookieParser());
 app.use(express.json());
 app.use(originGuard(allowedOrigins));
-app.use(
-  "/uploads",
-  helmet.crossOriginResourcePolicy({ policy: "cross-origin" }),
-  express.static(path.resolve("uploads")),
-);
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/products", productRoutes);

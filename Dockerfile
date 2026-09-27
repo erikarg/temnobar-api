@@ -20,7 +20,5 @@ COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/prisma.config.ts ./prisma.config.ts
 COPY --from=build /app/package.json ./package.json
 
-RUN mkdir -p uploads/products
-
 EXPOSE 3333
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
